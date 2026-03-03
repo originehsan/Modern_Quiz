@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:gap/gap.dart';
-import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:modern_quiz_app/core/theme/app_colors.dart';
 import 'package:modern_quiz_app/core/constants/app_constants.dart';
@@ -29,14 +28,27 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
-    // Check auth state and navigate
-    Future.delayed(const Duration(milliseconds: 2200), () {
+    // Check for existing login session and navigate
+    Future.delayed(const Duration(milliseconds: 1500), () async {
       if (mounted) {
-        final authVM = context.read<AuthViewModel>();
-        final nextRoute = authVM.isAuthenticated
-            ? AppConstants.homeRoute
-            : AppConstants.loginRoute;
-        Navigator.of(context).pushReplacementNamed(nextRoute);
+        try {
+          final authVM = context.read<AuthViewModel>();
+
+          // Check if user was previously logged in
+          await authVM.checkExistingLogin();
+
+          if (mounted) {
+            final nextRoute = authVM.isAuthenticated
+                ? AppConstants.homeRoute
+                : AppConstants.loginRoute;
+            Navigator.of(context).pushReplacementNamed(nextRoute);
+          }
+        } catch (e) {
+          debugPrint('Error during splash navigation: $e');
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(AppConstants.loginRoute);
+          }
+        }
       }
     });
   }
@@ -100,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
                   children: [
                     const Spacer(),
 
-                    // Centered Lottie animation with soft glow
+                    // Logo icon — renders instantly, no network needed
                     Container(
                           width: 120.r,
                           height: 120.r,
@@ -109,10 +121,11 @@ class _SplashScreenState extends State<SplashScreen>
                             borderRadius: BorderRadius.circular(32),
                             boxShadow: AppColors.accentShadow(blurRadius: 26),
                           ),
-                          child: Center(
-                            child: Lottie.network(
-                              'https://assets1.lottiefiles.com/packages/lf20_jcikwtux.json',
-                              repeat: true,
+                          child: const Center(
+                            child: Icon(
+                              Icons.quiz_rounded,
+                              color: Colors.white,
+                              size: 56,
                             ),
                           ),
                         )

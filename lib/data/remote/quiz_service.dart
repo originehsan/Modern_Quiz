@@ -16,7 +16,7 @@ class QuizRemoteDataSource {
     try {
       // Build query params — always use url3986 + multiple type
       final params = <String, dynamic>{
-        'amount': amount,
+        'amount': amount.toString(),
         'type': type ?? 'multiple',
         'encode': 'url3986',
       };
@@ -28,10 +28,8 @@ class QuizRemoteDataSource {
         params['difficulty'] = difficulty;
       }
 
-      final response = await dio.get(
-        AppConstants.baseUrl,
-        queryParameters: params,
-      );
+      final baseUrl = AppConstants.baseUrl;
+      final response = await dio.get(baseUrl, queryParameters: params);
 
       if (response.statusCode == 200 && response.data != null) {
         // Handle OpenTDB response_code
@@ -41,7 +39,9 @@ class QuizRemoteDataSource {
             // Success
             break;
           case 1:
-            throw Exception('Not enough questions available. Try fewer questions or different settings.');
+            throw Exception(
+              'Not enough questions available. Try fewer questions or different settings.',
+            );
           case 2:
             throw Exception('Invalid API parameter. Please try again.');
           case 3:
@@ -49,15 +49,21 @@ class QuizRemoteDataSource {
           case 4:
             throw Exception('All questions exhausted. Please restart the app.');
           case 5:
-            throw Exception('Too many requests. Please wait a moment and try again.');
+            throw Exception(
+              'Too many requests. Please wait a moment and try again.',
+            );
           default:
-            throw Exception('Unexpected response from server (code: $responseCode)');
+            throw Exception(
+              'Unexpected response from server (code: $responseCode)',
+            );
         }
 
         final List<dynamic> results = response.data['results'] ?? [];
 
         if (results.isEmpty) {
-          throw Exception('No questions found. Try selecting a different category or difficulty.');
+          throw Exception(
+            'No questions found. Try selecting a different category or difficulty.',
+          );
         }
 
         return results

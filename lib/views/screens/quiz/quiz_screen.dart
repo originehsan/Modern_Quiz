@@ -24,6 +24,7 @@ class _QuizScreenState extends State<QuizScreen> {
   // Track which question index we last animated
   int _lastAnimatedIndex = -1;
   bool _hasNavigated = false; // Guard against multiple navigations
+  QuizViewModel? _viewModel; // Cache to use in dispose
 
   Color _difficultyColor(String diff) {
     switch (diff.toLowerCase()) {
@@ -46,8 +47,13 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void dispose() {
     // Ensure timer is stopped when leaving the screen
-    final vm = context.read<QuizViewModel>();
-    vm.stopTimer();
+    // Use cached ViewModel to avoid context lookups during dispose
+    try {
+      _viewModel?.stopTimer();
+    } catch (e) {
+      debugPrint('Warning: Could not stop timer during dispose: $e');
+    }
+    _viewModel = null;
     super.dispose();
   }
 
@@ -61,6 +67,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return Consumer<QuizViewModel>(
       builder: (context, vm, _) {
+        // Cache ViewModel for safe use in dispose
+        _viewModel = vm;
         // Check if quiz is complete and navigate to result screen (only once)
         if (vm.isQuizComplete && !vm.isLoading && !_hasNavigated) {
           _hasNavigated = true;
@@ -101,7 +109,20 @@ class _QuizScreenState extends State<QuizScreen> {
           return _buildErrorScaffold(context, vm);
         }
 
-        final question = vm.currentQuestion!;
+        // Safely get current question with null check
+        final question = vm.currentQuestion;
+        if (question == null) {
+          // Question index out of bounds - show loading
+          return const Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: SpinKitThreeBounce(
+                color: AppColors.primaryAccent,
+                size: 24,
+              ),
+            ),
+          );
+        }
 
         // Detect question change for re-animation
         final shouldAnimate = vm.currentQuestionIndex != _lastAnimatedIndex;

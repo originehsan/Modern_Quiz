@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
 
@@ -34,6 +35,7 @@ class QuizViewModel extends ChangeNotifier {
   /// Countdown timer controller managed from the view model
   final CountDownController _timerController = CountDownController();
   Timer? _timeUpdateDebounce;
+  bool _isDisposed = false;
 
   // Simple in-memory quiz history
   final List<QuizResult> _history = [];
@@ -161,13 +163,16 @@ class QuizViewModel extends ChangeNotifier {
       _startTimerForCurrentQuestion();
       notifyListeners();
     } else {
-      // Quiz complete - don't increment further
+      // Quiz complete — increment past end so isQuizComplete becomes true
+      _currentQuestionIndex = _questions.length;
       notifyListeners();
     }
   }
 
   /// Called from the circular countdown widget on each tick.
   void updateTimer(int remaining) {
+    if (_isDisposed) return;
+
     final clamped = remaining.clamp(0, AppConstants.questionTimeLimit);
     if (clamped == _timeRemaining) return;
 
@@ -177,11 +182,18 @@ class QuizViewModel extends ChangeNotifier {
     // Throttle listener notifications slightly to avoid jank
     _timeUpdateDebounce?.cancel();
     _timeUpdateDebounce = Timer(const Duration(milliseconds: 80), () {
-      notifyListeners();
+      if (!_isDisposed) {
+        notifyListeners();
+      }
     });
 
+    // Schedule time-up handling outside the current frame to avoid build-phase updates
     if (_timeRemaining == 0 && !_isAnswered) {
-      _handleTimeUp();
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_isDisposed && _timeRemaining == 0 && !_isAnswered) {
+          _handleTimeUp();
+        }
+      });
     }
   }
 
@@ -234,17 +246,21 @@ class QuizViewModel extends ChangeNotifier {
   }
 
   void _handleTimeUp() {
-    if (_isAnswered) return;
+    if (_isAnswered || _isDisposed) return;
 
     _wrongAnswers++;
     _isAnswered = true;
     _showResult = true;
     _stopTimerInternal();
     _playFeedback(isCorrect: false);
-    notifyListeners();
+
+    // Only notify if not disposed
+    if (!_isDisposed) {
+      notifyListeners();
+    }
 
     Future.delayed(const Duration(milliseconds: 1000), () {
-      if (_isAnswered) {
+      if (_isAnswered && !_isDisposed) {
         nextQuestion();
       }
     });
@@ -259,7 +275,18 @@ class QuizViewModel extends ChangeNotifier {
   }
 
   void _stopTimerInternal() {
-    _timerController.pause();
+    try {
+      // Only call pause if the controller's ticker is still active
+      // (ticker is null after dispose)
+      if (!_isDisposed) {
+        _timerController.pause();
+      }
+    } catch (e) {
+      // Silently ignore if the controller is already disposed
+      debugPrint(
+        'Warning: Failed to pause timer - controller may be disposed: $e',
+      );
+    }
     _timeUpdateDebounce?.cancel();
     _timeUpdateDebounce = null;
   }
@@ -279,9 +306,21 @@ class QuizViewModel extends ChangeNotifier {
     });
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _timeUpdateDebounce?.cancel();
+    _timeUpdateDebounce = null;
+    // Note: CountDownController doesn't have a dispose method,
+    // so we just mark it as disposed to prevent further use
+    super.dispose();
+  }
+
   void removeHistoryItem(int index) {
     if (index < 0 || index >= _history.length) return;
     _history.removeAt(index);
-    notifyListeners();
+    if (!_isDisposed) {
+      notifyListeners();
+    }
   }
 }

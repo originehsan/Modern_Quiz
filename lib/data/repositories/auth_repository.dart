@@ -1,6 +1,14 @@
 import '../models/user_model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthRepository {
+  static const String _tokenKey = 'auth_token';
+  static const String _userIdKey = 'user_id';
+  static const String _emailKey = 'user_email';
+  static const String _usernameKey = 'user_username';
+
+  final _secureStorage = const FlutterSecureStorage();
+
   // Mock implementation - in production, this would call an API
 
   Future<AuthResponse> login({
@@ -19,16 +27,26 @@ class AuthRepository {
         throw Exception('Password too short');
       }
 
+      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      final token = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
+      final username = email.split('@')[0];
+
+      // Store securely
+      await _secureStorage.write(key: _tokenKey, value: token);
+      await _secureStorage.write(key: _userIdKey, value: userId);
+      await _secureStorage.write(key: _emailKey, value: email);
+      await _secureStorage.write(key: _usernameKey, value: username);
+
       final user = User(
-        id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+        id: userId,
         email: email,
-        username: email.split('@')[0],
+        username: username,
         createdAt: DateTime.now(),
       );
 
       return AuthResponse(
         user: user,
-        token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+        token: token,
         success: true,
         message: 'Login successful',
       );
@@ -58,8 +76,17 @@ class AuthRepository {
         throw Exception('Username is required');
       }
 
+      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      final token = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Store securely
+      await _secureStorage.write(key: _tokenKey, value: token);
+      await _secureStorage.write(key: _userIdKey, value: userId);
+      await _secureStorage.write(key: _emailKey, value: email);
+      await _secureStorage.write(key: _usernameKey, value: username);
+
       final user = User(
-        id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+        id: userId,
         email: email,
         username: username,
         createdAt: DateTime.now(),
@@ -67,7 +94,7 @@ class AuthRepository {
 
       return AuthResponse(
         user: user,
-        token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+        token: token,
         success: true,
         message: 'Signup successful',
       );
@@ -78,8 +105,11 @@ class AuthRepository {
 
   Future<void> logout() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      // Clear stored auth data
+      // Clear all stored auth data from secure storage
+      await _secureStorage.delete(key: _tokenKey);
+      await _secureStorage.delete(key: _userIdKey);
+      await _secureStorage.delete(key: _emailKey);
+      await _secureStorage.delete(key: _usernameKey);
     } catch (e) {
       rethrow;
     }
@@ -87,11 +117,46 @@ class AuthRepository {
 
   Future<bool> isUserLoggedIn() async {
     try {
-      // Check if token exists in secure storage
-      await Future.delayed(const Duration(milliseconds: 200));
-      return false; // Mock implementation
+      final token = await _secureStorage.read(key: _tokenKey);
+      return token != null && token.isNotEmpty;
     } catch (e) {
-      rethrow;
+      return false;
+    }
+  }
+
+  Future<String?> getStoredToken() async {
+    try {
+      return await _secureStorage.read(key: _tokenKey);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<String?> getStoredUserId() async {
+    try {
+      return await _secureStorage.read(key: _userIdKey);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<User?> getStoredUser() async {
+    try {
+      final userId = await _secureStorage.read(key: _userIdKey);
+      final email = await _secureStorage.read(key: _emailKey);
+      final username = await _secureStorage.read(key: _usernameKey);
+
+      if (userId != null && email != null && username != null) {
+        return User(
+          id: userId,
+          email: email,
+          username: username,
+          createdAt: DateTime.now(),
+        );
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 }

@@ -129,7 +129,6 @@ class GlassCard extends StatelessWidget {
 class CategoryCard extends StatefulWidget {
   final String icon;
   final String title;
-  final String subtitle;
   final VoidCallback? onTap;
   final Color? accentColor;
 
@@ -137,7 +136,6 @@ class CategoryCard extends StatefulWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
     this.onTap,
     this.accentColor,
   });
@@ -170,29 +168,22 @@ class _CategoryCardState extends State<CategoryCard> {
           ),
           padding: EdgeInsets.all(14.w),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(widget.icon, style: TextStyle(fontSize: 28.sp)),
-              Gap(8.h),
+              SizedBox(height: 8),
               Text(
                 widget.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                widget.subtitle,
-                style: GoogleFonts.poppins(
-                  fontSize: 10.sp,
-                  color: AppColors.textMuted,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

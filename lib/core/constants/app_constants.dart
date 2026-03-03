@@ -1,5 +1,5 @@
 // class AppConstants {
-// 
+//
 //   static const int connectTimeout = 10000;
 //   static const int receiveTimeout = 10000;
 
@@ -41,17 +41,17 @@
 //   static const double buttonRadius = 12.0;
 // }
 
-
-
-
-
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConstants {
   // API (Normal simple way)
-  static String get baseUrl =>
-      "${dotenv.env['QUIZ_BASE_URL']}?amount=10&type=multiple&encode=url3986";
+  static String get baseUrl {
+    final baseUrlEnv = dotenv.env['QUIZ_BASE_URL'];
+    if (baseUrlEnv == null || baseUrlEnv.isEmpty) {
+      throw Exception('QUIZ_BASE_URL is not set in .env file');
+    }
+    return baseUrlEnv;
+  }
 
   static const int connectTimeout = 10000;
   static const int receiveTimeout = 10000;

@@ -5,7 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+// flutter_spinkit removed — no longer used in home_screen
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:modern_quiz_app/core/theme/app_colors.dart';
@@ -24,6 +24,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? _selectedCategoryId;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _startQuiz(BuildContext context, QuizCategory category) async {
+    setState(() => _selectedCategoryId = category.id.toString());
+
     final homeVM = context.read<HomeViewModel>();
     final quizVM = context.read<QuizViewModel>();
 
@@ -43,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
       category: category.id.toString(),
       difficulty: difficulty,
     );
+
+    setState(() => _selectedCategoryId = null);
 
     if (!context.mounted) return;
 
@@ -511,6 +517,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 quizVM.lastCompletedCategory != null)
               _buildCenterProgressIndicator(context, homeVM, quizVM),
             Gap(14.h),
+            // Single centered loading indicator when fetching quiz questions
+            if (_selectedCategoryId != null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
             if (homeVM.isLoading)
               _buildShimmer()
             else if (homeVM.errorMessage != null)
@@ -601,7 +613,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryCard(BuildContext context, QuizCategory cat, int index) {
-    // Pick color from a set based on index
     final colors = [
       const Color(0xFFFF9F43),
       const Color(0xFF3B82F6),
@@ -616,108 +627,14 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     final color = colors[index % colors.length];
 
-    return GestureDetector(
-          onTap: () {
-            final quizVM = context.read<QuizViewModel>();
-            quizVM.lastCompletedCategory =
-                cat.name; // Track for progress center display
-            _startQuiz(context, cat);
-          },
-          child: Consumer<QuizViewModel>(
-            builder: (context, quizVM, _) {
-              final isLoading = quizVM.isLoading;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                transform: Matrix4.identity()
-                  ..scale(quizVM.isLoading ? 0.95 : 1.0),
-                decoration: BoxDecoration(
-                  color: AppColors.surface.withValues(alpha: 0.95),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    // Glass accent corner
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 50.r,
-                        height: 50.r,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.08),
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(18),
-                            bottomLeft: Radius.circular(18),
-                          ),
-                          border: Border(
-                            top: BorderSide(
-                              color: color.withValues(alpha: 0.1),
-                            ),
-                            left: BorderSide(
-                              color: color.withValues(alpha: 0.1),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Content - centered
-                    Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(cat.icon, style: TextStyle(fontSize: 32.sp)),
-                          Gap(8.h),
-                          Text(
-                            cat.name,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Loading overlay
-                    if (isLoading)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Center(
-                            child: SpinKitThreeBounce(color: color, size: 18.r),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-        )
+    return _CategoryTapCard(
+      cat: cat,
+      color: color,
+      onTap: () {
+        context.read<QuizViewModel>().lastCompletedCategory = cat.name;
+        _startQuiz(context, cat);
+      },
+    )
         .animate(delay: (index * 40).ms)
         .fadeIn(duration: 500.ms)
         .slideY(begin: 0.1, end: 0);
@@ -910,6 +827,111 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+// ─── Standalone category card (tap-scale, no loading overlay) ───────────────
+class _CategoryTapCard extends StatefulWidget {
+  final QuizCategory cat;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _CategoryTapCard({
+    required this.cat,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_CategoryTapCard> createState() => _CategoryTapCardState();
+}
+
+class _CategoryTapCardState extends State<_CategoryTapCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.border.withValues(alpha: 0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: widget.color.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Accent corner
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: widget.color.withValues(alpha: 0.08),
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
+                    ),
+                    border: Border(
+                      top: BorderSide(color: widget.color.withValues(alpha: 0.1)),
+                      left: BorderSide(color: widget.color.withValues(alpha: 0.1)),
+                    ),
+                  ),
+                ),
+              ),
+              // Icon + title only — no subtitle, no loading overlay
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(widget.cat.icon, style: const TextStyle(fontSize: 32)),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.cat.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

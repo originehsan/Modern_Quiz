@@ -10,6 +10,7 @@ import 'package:modern_quiz_app/core/theme/app_colors.dart';
 import 'package:modern_quiz_app/core/constants/app_constants.dart';
 import 'package:modern_quiz_app/viewmodel/profile/profile_viewmodel.dart';
 import 'package:modern_quiz_app/viewmodel/home/home_viewmodel.dart';
+import 'package:modern_quiz_app/viewmodel/auth/auth_viewmodel.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -86,7 +87,8 @@ class SettingsScreen extends StatelessWidget {
                                   title: 'Difficulty',
                                   subtitle: homeVM.difficultyText,
                                   isSlider: true,
-                                  sliderValue: homeVM.selectedDifficulty.toDouble(),
+                                  sliderValue: homeVM.selectedDifficulty
+                                      .toDouble(),
                                   sliderMin: 0,
                                   sliderMax: 3,
                                   onSliderChanged: (v) =>
@@ -97,9 +99,11 @@ class SettingsScreen extends StatelessWidget {
                                 _buildTile(
                                   icon: PhosphorIcons.listNumbers(),
                                   title: 'Questions per Quiz',
-                                  subtitle: '${homeVM.selectedQuestionCount} questions',
+                                  subtitle:
+                                      '${homeVM.selectedQuestionCount} questions',
                                   isSlider: true,
-                                  sliderValue: homeVM.selectedQuestionCount.toDouble(),
+                                  sliderValue: homeVM.selectedQuestionCount
+                                      .toDouble(),
                                   sliderMin: 5,
                                   sliderMax: 20,
                                   sliderDivisions: 3,
@@ -379,9 +383,20 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, AppConstants.loginRoute);
+
+              // Call logout from AuthViewModel
+              final authVM = context.read<AuthViewModel>();
+              await authVM.logout();
+
+              if (context.mounted) {
+                // Navigate to login screen
+                Navigator.pushReplacementNamed(
+                  context,
+                  AppConstants.loginRoute,
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,

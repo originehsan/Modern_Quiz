@@ -25,6 +25,25 @@ class AuthViewModel extends ChangeNotifier {
 
   AuthViewModel({required this.repository});
 
+  /// Check if user is already logged in (call on app startup)
+  Future<void> checkExistingLogin() async {
+    try {
+      final isLoggedIn = await repository.isUserLoggedIn();
+      if (isLoggedIn) {
+        final user = await repository.getStoredUser();
+        final token = await repository.getStoredToken();
+        if (user != null && token != null) {
+          _currentUser = user;
+          _authToken = token;
+          _isAuthenticated = true;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking existing login: $e');
+    }
+  }
+
   Future<void> login({required String email, required String password}) async {
     _isLoading = true;
     _errorMessage = null;
@@ -91,8 +110,10 @@ class AuthViewModel extends ChangeNotifier {
       _authToken = null;
       _isAuthenticated = false;
       _errorMessage = null;
+      notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
+      notifyListeners();
     } finally {
       _isLoading = false;
       notifyListeners();
