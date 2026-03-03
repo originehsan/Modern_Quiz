@@ -59,123 +59,144 @@ class _ResultScreenState extends State<ResultScreen>
   Widget build(BuildContext context) {
     final result = widget.quizResult;
 
+    // Confetti colors based on score
+    final confettiColors = _isGoodScore
+        ? // Happy colors for good scores (>= 60%)
+          const [
+            AppColors.primary,
+            AppColors.success,
+            AppColors.infoBlue,
+            AppColors.primaryLight,
+          ]
+        : // Sad colors for lower scores (< 60%)
+          [
+            Colors.blueGrey,
+            Colors.grey,
+            AppColors.infoBlue.withOpacity(0.5),
+            Color(0xFF9CA3AF),
+          ];
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Confetti
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              colors: const [
-                AppColors.primaryAccent,
-                AppColors.success,
-                AppColors.info,
-                AppColors.secondaryAccent,
-              ],
-              numberOfParticles: 30,
-              gravity: 0.2,
-            ),
+      backgroundColor: AppColors.bgStart,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.bgStart, AppColors.bgEnd],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: Column(
-                children: [
-                  Gap(20.h),
-
-                  // App bar area
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(
-                          context,
-                        ).pushReplacementNamed(AppConstants.homeRoute),
-                        child: Container(
-                          width: 40.r,
-                          height: 40.r,
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                            boxShadow: AppColors.subtleShadow(),
-                          ),
-                          child: Icon(
-                            PhosphorIcons.house(),
-                            color: AppColors.textPrimary,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Quiz Complete!',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const Spacer(),
-                      SizedBox(width: 40.r),
-                    ],
-                  ),
-
-                  Gap(32.h),
-
-                  // Success animation
-                  Builder(
-                        builder: (context) => Lottie.network(
-                          'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json',
-                          height: 140.h,
-                          repeat: false,
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 600.ms)
-                      .scale(
-                        begin: const Offset(0.8, 0.8),
-                        end: const Offset(1, 1),
-                        duration: 600.ms,
-                        curve: Curves.easeOutBack,
-                      ),
-
-                  Gap(12.h),
-
-                  // Score circle
-                  _buildScoreCircle(result),
-
-                  Gap(28.h),
-
-                  // Performance badge
-                  PerformanceBadge(
-                    badge: result.badge,
-                    score: result.correctAnswers,
-                    total: result.totalQuestions,
-                  ),
-
-                  Gap(28.h),
-
-                  // Stats card
-                  _buildStatsCard(result)
-                      .animate(delay: 400.ms)
-                      .fadeIn(duration: 500.ms)
-                      .slideY(begin: 0.1, end: 0),
-
-                  Gap(28.h),
-
-                  // Buttons
-                  _buildButtons(context, result),
-
-                  Gap(32.h),
-                ],
+        ),
+        child: Stack(
+          children: [
+            // Confetti with conditional colors
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                colors: confettiColors,
+                numberOfParticles: 30,
+                gravity: 0.2,
               ),
             ),
-          ),
-        ],
+
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Column(
+                  children: [
+                    Gap(20.h),
+
+                    // App bar area
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pushReplacementNamed(AppConstants.homeRoute),
+                          child: Container(
+                            width: 40.r,
+                            height: 40.r,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                              boxShadow: AppColors.softShadow(),
+                            ),
+                            child: Icon(
+                              PhosphorIcons.house(),
+                              color: AppColors.textPrimary,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Quiz Complete!',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const Spacer(),
+                        SizedBox(width: 40.r),
+                      ],
+                    ),
+
+                    Gap(32.h),
+
+                    // Success animation
+                    Builder(
+                          builder: (context) => Lottie.network(
+                            'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json',
+                            height: 140.h,
+                            repeat: false,
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 600.ms)
+                        .scale(
+                          begin: const Offset(0.8, 0.8),
+                          end: const Offset(1, 1),
+                          duration: 600.ms,
+                          curve: Curves.easeOutBack,
+                        ),
+
+                    Gap(12.h),
+
+                    // Score circle
+                    _buildScoreCircle(result),
+
+                    Gap(28.h),
+
+                    // Performance badge
+                    PerformanceBadge(
+                      badge: result.badge,
+                      score: result.correctAnswers,
+                      total: result.totalQuestions,
+                    ),
+
+                    Gap(28.h),
+
+                    // Stats card
+                    _buildStatsCard(result)
+                        .animate(delay: 400.ms)
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: 0.1, end: 0),
+
+                    Gap(28.h),
+
+                    // Buttons
+                    _buildButtons(context, result),
+
+                    Gap(32.h),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -186,7 +207,7 @@ class _ResultScreenState extends State<ResultScreen>
     if (result.percentage >= 80) {
       progressColor = AppColors.success;
     } else if (result.percentage >= 60) {
-      progressColor = AppColors.warning;
+      progressColor = Color(0xFFF59E0B);
     }
 
     return CircularPercentIndicator(
@@ -196,7 +217,7 @@ class _ResultScreenState extends State<ResultScreen>
           animation: true,
           animationDuration: 1200,
           circularStrokeCap: CircularStrokeCap.round,
-          backgroundColor: AppColors.surfaceAlt,
+          backgroundColor: AppColors.bgStart.withOpacity(0.5),
           progressColor: progressColor,
           center: Column(
             mainAxisSize: MainAxisSize.min,
@@ -237,22 +258,17 @@ class _ResultScreenState extends State<ResultScreen>
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFFF7ED), Color(0xFFFFFFFF)],
+          colors: [
+            AppColors.bgStart.withOpacity(0.8),
+            AppColors.bgEnd.withOpacity(0.6),
+          ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primaryAccent.withValues(alpha: 0.2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        boxShadow: AppColors.softShadow(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,28 +300,28 @@ class _ResultScreenState extends State<ResultScreen>
             PhosphorIcons.smileyWink(),
             'Accuracy',
             '${accuracy.toStringAsFixed(1)}%',
-            AppColors.info,
+            AppColors.infoBlue,
           ),
           _divider(),
           _statRow(
             PhosphorIcons.timer(),
             'Time Spent',
             '${result.timeSpent}s',
-            AppColors.warning,
+            Color(0xFFF59E0B),
           ),
           _divider(),
           _statRow(
             PhosphorIcons.tag(),
             'Category',
             result.category,
-            AppColors.primaryAccent,
+            AppColors.primary,
           ),
           _divider(),
           _statRow(
             PhosphorIcons.chartBar(),
             'Difficulty',
             result.difficulty.toUpperCase(),
-            AppColors.secondaryAccent,
+            AppColors.primaryLight,
           ),
         ],
       ),
@@ -321,7 +337,7 @@ class _ResultScreenState extends State<ResultScreen>
             width: 34.r,
             height: 34.r,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 16),
@@ -354,7 +370,7 @@ class _ResultScreenState extends State<ResultScreen>
   Widget _buildButtons(BuildContext context, QuizResult result) {
     return Column(
       children: [
-        // Finish Quiz
+        // Finish Quiz - Gradient Button
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
@@ -370,11 +386,11 @@ class _ResultScreenState extends State<ResultScreen>
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryAccent,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(vertical: 16.h),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
               ),
               elevation: 0,
             ),

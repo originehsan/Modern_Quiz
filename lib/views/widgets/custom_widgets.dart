@@ -62,10 +62,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             ),
             child: Center(
               child: widget.isLoading
-                  ? SpinKitThreeBounce(
-                      color: Colors.white,
-                      size: 20.r,
-                    )
+                  ? SpinKitThreeBounce(color: Colors.white, size: 20.r)
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -371,7 +368,7 @@ class CountdownTimer extends StatelessWidget {
     if (seconds <= 5) {
       color = AppColors.error;
     } else if (seconds <= 15) {
-      color = AppColors.warning;
+      color = const Color(0xFFF59E0B);
     }
 
     return Container(
@@ -423,7 +420,7 @@ class PerformanceBadge extends StatelessWidget {
         ? '🥈'
         : '🥉';
     final color = badge == 'Gold'
-        ? AppColors.warning
+        ? const Color(0xFFF59E0B)
         : badge == 'Silver'
         ? AppColors.textSecondary
         : const Color(0xFFCD7F32);
@@ -484,11 +481,7 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final animation = lottieUrl != null
-        ? Lottie.network(
-            lottieUrl!,
-            height: 120.h,
-            repeat: true,
-          )
+        ? Lottie.network(lottieUrl!, height: 120.h, repeat: true)
         : Text(emoji, style: TextStyle(fontSize: 56.sp));
 
     return Center(

@@ -58,8 +58,11 @@ class _SignupScreenState extends State<SignupScreen>
         SnackBar(
           content: Row(
             children: [
-              Icon(PhosphorIcons.warningCircle(),
-                  color: Colors.white, size: 18),
+              Icon(
+                PhosphorIcons.warningCircle(),
+                color: Colors.white,
+                size: 18,
+              ),
               Gap(8.w),
               const Text('Passwords do not match!'),
             ],
@@ -157,13 +160,13 @@ class _SignupScreenState extends State<SignupScreen>
 
                     // Title
                     Text(
-                      'Create Account',
-                      style: GoogleFonts.poppins(
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    )
+                          'Create Account',
+                          style: GoogleFonts.poppins(
+                            fontSize: 28.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        )
                         .animate()
                         .fadeIn(duration: 500.ms)
                         .slideY(begin: 0.2, end: 0),
@@ -174,9 +177,7 @@ class _SignupScreenState extends State<SignupScreen>
                         fontSize: 14.sp,
                         color: AppColors.textSecondary,
                       ),
-                    )
-                        .animate(delay: 100.ms)
-                        .fadeIn(duration: 400.ms),
+                    ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
 
                     Gap(28.h),
 
@@ -213,9 +214,7 @@ class _SignupScreenState extends State<SignupScreen>
                           ),
                         ],
                       ),
-                    )
-                        .animate(delay: 400.ms)
-                        .fadeIn(duration: 400.ms),
+                    ).animate(delay: 400.ms).fadeIn(duration: 400.ms),
 
                     Gap(20.h),
                   ],
@@ -349,8 +348,7 @@ class _SignupScreenState extends State<SignupScreen>
                           size: 20,
                         ),
                         onPressed: () => setState(
-                          () =>
-                              _showConfirmPassword = !_showConfirmPassword,
+                          () => _showConfirmPassword = !_showConfirmPassword,
                         ),
                       ),
                     ),
@@ -380,8 +378,7 @@ class _SignupScreenState extends State<SignupScreen>
                             gradient: _agreedToTerms
                                 ? AppColors.primaryAccentGradient
                                 : null,
-                            color:
-                                _agreedToTerms ? null : Colors.transparent,
+                            color: _agreedToTerms ? null : Colors.transparent,
                           ),
                           child: _agreedToTerms
                               ? Icon(
@@ -523,7 +520,7 @@ class _SignupScreenState extends State<SignupScreen>
       case 1:
         return AppColors.error;
       case 2:
-        return AppColors.warning;
+        return const Color(0xFFF59E0B);
       case 3:
       case 4:
         return AppColors.success;

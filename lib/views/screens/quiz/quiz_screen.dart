@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -31,7 +33,7 @@ class _QuizScreenState extends State<QuizScreen> {
       case 'easy':
         return AppColors.success;
       case 'medium':
-        return AppColors.warning;
+        return Color(0xFFF59E0B);
       case 'hard':
         return AppColors.error;
       default:
@@ -49,9 +51,12 @@ class _QuizScreenState extends State<QuizScreen> {
     // Ensure timer is stopped when leaving the screen
     // Use cached ViewModel to avoid context lookups during dispose
     try {
-      _viewModel?.stopTimer();
+      // Only stop timer if it's still running (quiz not complete)
+      if (_viewModel != null && !_viewModel!.isQuizComplete) {
+        _viewModel!.stopTimer();
+      }
     } catch (e) {
-      debugPrint('Warning: Could not stop timer during dispose: $e');
+      debugPrint('Note: Timer already stopped or disposed during cleanup: $e');
     }
     _viewModel = null;
     super.dispose();
@@ -74,7 +79,12 @@ class _QuizScreenState extends State<QuizScreen> {
           _hasNavigated = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            vm.stopTimer();
+            // Safely stop the timer - it may already be stopped
+            try {
+              vm.stopTimer();
+            } catch (e) {
+              debugPrint('Note: Timer already stopped: $e');
+            }
             final navigator = Navigator.of(context);
             Future.delayed(const Duration(milliseconds: 150), () {
               if (!mounted) return;
@@ -131,46 +141,55 @@ class _QuizScreenState extends State<QuizScreen> {
         }
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.bgStart,
           appBar: _buildAppBar(context, vm, category, difficulty),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Gap(12.h),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.bgStart, AppColors.bgEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Gap(12.h),
 
-                  // Timer directly below AppBar
-                  _buildTimer(vm),
+                    // Timer directly below AppBar
+                    _buildTimer(vm),
 
-                  Gap(16.h),
+                    Gap(16.h),
 
-                  // Progress bar
-                  _buildProgressBar(vm),
+                    // Progress bar
+                    _buildProgressBar(vm),
 
-                  Gap(20.h),
+                    Gap(20.h),
 
-                  // Question card
-                  _buildQuestionCard(question, vm, shouldAnimate),
+                    // Question card
+                    _buildQuestionCard(question, vm, shouldAnimate),
 
-                  Gap(20.h),
+                    Gap(20.h),
 
-                  // Answer options
-                  ...List.generate(question.allAnswers.length, (i) {
-                    return _buildAnswerTile(
-                      answer: question.allAnswers[i],
-                      index: i,
-                      vm: vm,
-                      question: question,
-                      shouldAnimate: shouldAnimate,
-                    );
-                  }),
+                    // Answer options
+                    ...List.generate(question.allAnswers.length, (i) {
+                      return _buildAnswerTile(
+                        answer: question.allAnswers[i],
+                        index: i,
+                        vm: vm,
+                        question: question,
+                        shouldAnimate: shouldAnimate,
+                      );
+                    }),
 
-                  Gap(24.h),
+                    Gap(24.h),
 
-                  Gap(20.h),
-                ],
+                    Gap(20.h),
+                  ],
+                ),
               ),
             ),
           ),
@@ -205,7 +224,7 @@ class _QuizScreenState extends State<QuizScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
             decoration: BoxDecoration(
-              color: _difficultyColor(difficulty).withValues(alpha: 0.12),
+              color: _difficultyColor(difficulty).withOpacity(0.12),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -229,9 +248,9 @@ class _QuizScreenState extends State<QuizScreen> {
     if (vm.timeRemaining <= 5) {
       ringColor = AppColors.error;
     } else if (vm.timeRemaining <= 15) {
-      ringColor = AppColors.warning;
+      ringColor = Color(0xFFF59E0B);
     } else {
-      ringColor = AppColors.primaryAccent;
+      ringColor = AppColors.primary;
     }
 
     return Center(
@@ -242,7 +261,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 controller: vm.timerController,
                 width: 56.r,
                 height: 56.r,
-                ringColor: AppColors.surfaceAlt,
+                ringColor: AppColors.bgStart,
                 fillColor: ringColor,
                 backgroundColor: AppColors.surface,
                 strokeWidth: 6,
@@ -290,7 +309,7 @@ class _QuizScreenState extends State<QuizScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primaryAccent,
+                color: AppColors.primary,
               ),
             ),
           ],
@@ -299,8 +318,8 @@ class _QuizScreenState extends State<QuizScreen> {
         LinearPercentIndicator(
           percent: vm.progressPercent.clamp(0.0, 1.0),
           lineHeight: 6.h,
-          backgroundColor: AppColors.surfaceAlt,
-          progressColor: AppColors.primaryAccent,
+          backgroundColor: AppColors.bgStart.withOpacity(0.5),
+          progressColor: AppColors.primary,
           barRadius: const Radius.circular(10),
           padding: EdgeInsets.zero,
           animation: true,
@@ -312,48 +331,65 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Widget _buildQuestionCard(Question question, QuizViewModel vm, bool animate) {
-    final card = Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(22.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.cardShadow(),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Category chip
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: AppColors.accentLight,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              question.category,
-              style: GoogleFonts.poppins(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.secondaryAccent,
+    final card = ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.25),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.35)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ],
           ),
-          Gap(14.h),
-          // Question Text
-          Text(
-            question.question,
-            style: GoogleFonts.poppins(
-              fontSize: 17.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              height: 1.5,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Category chip
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryLight.withOpacity(0.3),
+                      AppColors.primary.withOpacity(0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  question.category,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Gap(14.h),
+              // Question Text with modern typography
+              Text(
+                question.question,
+                style: GoogleFonts.poppins(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  height: 1.5,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -378,6 +414,7 @@ class _QuizScreenState extends State<QuizScreen> {
     Color bgColor = AppColors.surface;
     Color borderColor = AppColors.border;
     Color textColor = AppColors.textPrimary;
+    LinearGradient? gradient;
     Widget? trailing;
 
     if (showResult) {
@@ -385,6 +422,12 @@ class _QuizScreenState extends State<QuizScreen> {
         bgColor = AppColors.successLight;
         borderColor = AppColors.success;
         textColor = AppColors.success;
+        gradient = LinearGradient(
+          colors: [
+            AppColors.success.withOpacity(0.1),
+            AppColors.successLight.withOpacity(0.2),
+          ],
+        );
         trailing = Icon(
           PhosphorIcons.checkCircle(),
           color: AppColors.success,
@@ -394,6 +437,12 @@ class _QuizScreenState extends State<QuizScreen> {
         bgColor = AppColors.errorLight;
         borderColor = AppColors.error;
         textColor = AppColors.error;
+        gradient = LinearGradient(
+          colors: [
+            AppColors.error.withOpacity(0.1),
+            AppColors.errorLight.withOpacity(0.2),
+          ],
+        );
         trailing = Icon(
           PhosphorIcons.xCircle(),
           color: AppColors.error,
@@ -402,8 +451,18 @@ class _QuizScreenState extends State<QuizScreen> {
       }
     } else if (isSelected) {
       bgColor = AppColors.accentLight;
-      borderColor = AppColors.primaryAccent;
-      textColor = AppColors.secondaryAccent;
+      borderColor = AppColors.primary;
+      textColor = AppColors.textPrimary;
+      gradient = LinearGradient(
+        colors: [
+          AppColors.primaryLight.withOpacity(0.3),
+          AppColors.primary.withOpacity(0.15),
+        ],
+      );
+    } else {
+      gradient = LinearGradient(
+        colors: [AppColors.surface, AppColors.surface.withOpacity(0.8)],
+      );
     }
 
     final tile = GestureDetector(
@@ -416,13 +475,13 @@ class _QuizScreenState extends State<QuizScreen> {
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
         decoration: BoxDecoration(
-          color: bgColor,
+          gradient: gradient,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
-            width: isSelected || (showResult && isCorrect) ? 1.5 : 1,
+            width: isSelected || (showResult && isCorrect) ? 2 : 1,
           ),
-          boxShadow: AppColors.subtleShadow(),
+          boxShadow: AppColors.softShadow(),
         ),
         child: Row(
           children: [
@@ -432,13 +491,27 @@ class _QuizScreenState extends State<QuizScreen> {
               height: 32.r,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: showResult && isCorrect
-                    ? AppColors.success.withValues(alpha: 0.15)
-                    : showResult && isSelected
-                    ? AppColors.error.withValues(alpha: 0.15)
-                    : isSelected
-                    ? AppColors.primaryAccent.withValues(alpha: 0.15)
-                    : AppColors.surfaceAlt,
+                gradient: LinearGradient(
+                  colors: showResult && isCorrect
+                      ? [
+                          AppColors.success.withOpacity(0.2),
+                          AppColors.success.withOpacity(0.1),
+                        ]
+                      : showResult && isSelected
+                      ? [
+                          AppColors.error.withOpacity(0.2),
+                          AppColors.error.withOpacity(0.1),
+                        ]
+                      : isSelected
+                      ? [
+                          AppColors.primary.withOpacity(0.2),
+                          AppColors.primary.withOpacity(0.1),
+                        ]
+                      : [
+                          AppColors.surfaceAlt,
+                          AppColors.surfaceAlt.withOpacity(0.8),
+                        ],
+                ),
               ),
               child: Center(
                 child: Text(
@@ -456,7 +529,7 @@ class _QuizScreenState extends State<QuizScreen> {
               child: Text(
                 answer,
                 style: GoogleFonts.poppins(
-                  fontSize: 14.sp,
+                  fontSize: 16.sp,
                   fontWeight: isSelected || (showResult && isCorrect)
                       ? FontWeight.w600
                       : FontWeight.w500,
@@ -514,7 +587,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildLoadingScaffold() {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bgStart,
       appBar: AppBar(
         title: Text(
           'Loading Quiz...',
@@ -527,32 +600,41 @@ class _QuizScreenState extends State<QuizScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SpinKitThreeBounce(
-              color: AppColors.primaryAccent,
-              size: 28.r,
-            ).animate(onPlay: (c) => c.repeat()).fadeIn(duration: 400.ms),
-            Gap(24.h),
-            Text(
-              'Fetching questions...',
-              style: GoogleFonts.poppins(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.bgStart, AppColors.bgEnd],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SpinKitThreeBounce(
+                color: AppColors.primary,
+                size: 28.r,
+              ).animate(onPlay: (c) => c.repeat()).fadeIn(duration: 400.ms),
+              Gap(24.h),
+              Text(
+                'Fetching questions...',
+                style: GoogleFonts.poppins(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-            Gap(8.h),
-            Text(
-              'Connecting to Open Trivia DB',
-              style: GoogleFonts.poppins(
-                fontSize: 13.sp,
-                color: AppColors.textMuted,
+              Gap(8.h),
+              Text(
+                'Connecting to Open Trivia DB',
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  color: AppColors.textMuted,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -560,7 +642,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildErrorScaffold(BuildContext context, QuizViewModel vm) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bgStart,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(PhosphorIcons.arrowLeft(), color: AppColors.textPrimary),
@@ -577,66 +659,75 @@ class _QuizScreenState extends State<QuizScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80.r,
-                height: 80.r,
-                decoration: BoxDecoration(
-                  color: AppColors.errorLight,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  PhosphorIcons.wifiSlash(),
-                  color: AppColors.error,
-                  size: 36,
-                ),
-              ),
-              Gap(20.h),
-              Text(
-                'Oops!',
-                style: GoogleFonts.poppins(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Gap(8.h),
-              Text(
-                vm.errorMessage ?? 'No questions loaded. Please try again.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              Gap(28.h),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(PhosphorIcons.arrowLeft(), size: 18),
-                label: Text(
-                  'Go Back',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryAccent,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 28.w,
-                    vertical: 14.h,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.bgStart, AppColors.bgEnd],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80.r,
+                  height: 80.r,
+                  decoration: BoxDecoration(
+                    color: AppColors.errorLight,
+                    shape: BoxShape.circle,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  child: Icon(
+                    PhosphorIcons.wifiSlash(),
+                    color: AppColors.error,
+                    size: 36,
                   ),
-                  elevation: 0,
                 ),
-              ),
-            ],
+                Gap(20.h),
+                Text(
+                  'Oops!',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Gap(8.h),
+                Text(
+                  vm.errorMessage ?? 'No questions loaded. Please try again.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                Gap(28.h),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(PhosphorIcons.arrowLeft(), size: 18),
+                  label: Text(
+                    'Go Back',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 28.w,
+                      vertical: 14.h,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

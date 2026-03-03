@@ -134,7 +134,6 @@ Future<void> main() async {
 8. **Exception Handling** - DioException handling with network-specific error messages
 
 ### Configuration:
-- **Base URL:** `https://opentdb.com/api.php`
 - **Default Parameters:** 
   - Type: `multiple` (multiple choice)
   - Encode: `url3986` (URL encoding)

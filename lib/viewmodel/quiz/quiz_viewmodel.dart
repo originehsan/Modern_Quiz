@@ -33,7 +33,8 @@ class QuizViewModel extends ChangeNotifier {
   final Map<String, double> _categoryProgress = {};
 
   /// Countdown timer controller managed from the view model
-  final CountDownController _timerController = CountDownController();
+  /// Recreated for each new quiz to avoid using disposed animation controllers
+  late CountDownController _timerController;
   Timer? _timeUpdateDebounce;
   bool _isDisposed = false;
 
@@ -66,7 +67,14 @@ class QuizViewModel extends ChangeNotifier {
   Map<String, double> get categoryProgress => _categoryProgress;
   List<QuizResult> get history => List.unmodifiable(_history);
 
-  QuizViewModel({required this.repository});
+  QuizViewModel({required this.repository}) {
+    _initializeTimer();
+  }
+
+  /// Initialize or reinitialize the timer controller
+  void _initializeTimer() {
+    _timerController = CountDownController();
+  }
 
   Future<void> initializeQuiz({
     required int amount,
@@ -75,6 +83,8 @@ class QuizViewModel extends ChangeNotifier {
   }) async {
     _resetQuizState();
     _stopTimerInternal();
+    // Create a fresh timer controller for this quiz
+    _initializeTimer();
     _isLoading = true;
     _quizStartTime = DateTime.now();
     notifyListeners();
@@ -267,7 +277,18 @@ class QuizViewModel extends ChangeNotifier {
   }
 
   void _startTimerForCurrentQuestion() {
-    _timerController.restart(duration: AppConstants.questionTimeLimit);
+    try {
+      _timerController.restart(duration: AppConstants.questionTimeLimit);
+    } catch (e) {
+      // If restart fails, reinitialize the controller and try again
+      debugPrint('Timer restart failed, reinitializing: $e');
+      _initializeTimer();
+      try {
+        _timerController.restart(duration: AppConstants.questionTimeLimit);
+      } catch (e2) {
+        debugPrint('Failed to restart timer after reinitialization: $e2');
+      }
+    }
   }
 
   void stopTimer() {
@@ -275,20 +296,22 @@ class QuizViewModel extends ChangeNotifier {
   }
 
   void _stopTimerInternal() {
-    try {
-      // Only call pause if the controller's ticker is still active
-      // (ticker is null after dispose)
-      if (!_isDisposed) {
-        _timerController.pause();
-      }
-    } catch (e) {
-      // Silently ignore if the controller is already disposed
-      debugPrint(
-        'Warning: Failed to pause timer - controller may be disposed: $e',
-      );
-    }
+    // Only attempt to pause if the viewmodel is not disposed
+    if (_isDisposed) return;
+
+    // Cancel any pending debounce timers
     _timeUpdateDebounce?.cancel();
     _timeUpdateDebounce = null;
+
+    // Safely pause the countdown timer with error handling
+    try {
+      // Check if controller's internal state is still valid before calling pause
+      _timerController.pause();
+    } catch (e) {
+      // Silently ignore if the controller is already in a bad state
+      // This can happen if the controller is disposed or the ticker is null
+      debugPrint('Note: Timer already stopped or disposed: $e');
+    }
   }
 
   void _playFeedback({required bool isCorrect}) {
