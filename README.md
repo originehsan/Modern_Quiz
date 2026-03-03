@@ -1,85 +1,87 @@
 # Modern Quiz App
 
-A professional Flutter application for taking category-based quizzes with multiple difficulty levels, real-time scoring, and a modern UI design.
+A Flutter application for taking category-based quizzes with multiple difficulty levels, real-time scoring, and a modern, clean user interface.
 
 ---
 
 ## Overview
 
-Modern Quiz App is a clean, production-ready Flutter application that demonstrates industry-standard practices in mobile app development. The app allows users to select quiz categories and difficulty levels, answer dynamically fetched multiple-choice questions, and receive real-time performance feedback with animated results.
+Modern Quiz App is a structured Flutter project built to demonstrate practical mobile development using clean architecture principles. The application allows users to select quiz categories, choose difficulty levels, answer dynamically fetched multiple-choice questions, and receive performance feedback through an animated results screen.
 
-Built with a focus on maintainability and scalability, the project implements MVVM architecture with proper separation of concerns, making it an ideal reference for Flutter developers and engineering internship candidates.
+The main focus of this project is maintainable code, proper separation of concerns, and scalable architecture. It follows the MVVM pattern and uses Provider for state management, making it a strong example project for internship and junior-level Flutter roles.
 
 ---
 
 ## Features
 
-- **Category Selection**: Browse and select from multiple quiz categories
-- **Difficulty Levels**: Choose from Easy, Medium, and Hard question sets
-- **Dynamic Question Fetching**: Real-time question retrieval from external service
-- **Timer-Based Quizzes**: Countdown timer for each question (customizable duration)
-- **Real-Time Score Calculation**: Instant feedback on answer correctness
-- **Comprehensive Results Screen**: 
-  - Percentage score calculation
-  - Accuracy statistics
-  - Time spent tracking
-  - Category and difficulty summary
-- **Conditional Confetti Animation**: Performance-based celebration effects
-- **Modern UI Design**:
-  - Warm gradient backgrounds
-  - Glass-morphism cards
-  - Smooth animations
-  - Responsive typography
-- **Network Error Handling**: Graceful fallback for connection failures
-- **State Persistence**: Quiz history and user session management
+- **Category Selection** – Browse and choose from multiple quiz categories  
+- **Difficulty Levels** – Easy, Medium, and Hard question sets  
+- **Dynamic Question Fetching** – Questions retrieved in real time from an external service  
+- **Timer-Based Quiz Flow** – Countdown timer for each question  
+- **Real-Time Score Calculation** – Immediate answer validation  
+- **Detailed Results Screen**
+  - Percentage score calculation  
+  - Accuracy statistics  
+  - Time tracking  
+  - Category and difficulty summary  
+- **Performance-Based Confetti Animation** – Celebration effects based on results  
+- **Modern UI Design**
+  - Warm gradient backgrounds  
+  - Glass-style cards with backdrop blur  
+  - Smooth and subtle animations  
+  - Responsive typography  
+- **Network Error Handling** – Graceful handling of connectivity issues  
+- **Session State Management** – Quiz state maintained throughout the session  
 
 ---
 
 ## Architecture
 
-This project follows the **MVVM (Model-View-ViewModel)** architectural pattern, ensuring clean code organization and testability.
+The project follows the **MVVM (Model–View–ViewModel)** architectural pattern to ensure clean code organization and easier testing.
 
-### Architecture Components
+### View Layer (UI)
 
-**View Layer (UI)**
-- Stateful and Stateless widgets
-- Screen components in dedicated folders
-- Responsive design using ScreenUtil
-- Animation and transition handling
+- Stateless and Stateful widgets  
+- Screen components organized into dedicated folders  
+- Responsive layout handling  
+- Animation and transition management  
 
-**ViewModel Layer (Business Logic)**
-- ChangeNotifier for state management
-- Quiz logic and score calculation
-- User interaction handling
-- Data validation
+### ViewModel Layer (Business Logic)
 
-**Model Layer (Data Representation)**
-- Question and Category models
-- QuizResult data class
-- User authentication models
-- API response mapping
+- Uses `ChangeNotifier` with Provider  
+- Handles quiz flow and score calculation  
+- Manages user interaction logic  
+- Performs validation and state updates  
 
-**Service & Repository Layer**
-- API communication via Dio
-- Data fetching and transformation
-- Error handling and retry logic
-- Repository pattern for data access
+### Model Layer (Data Representation)
 
-### State Management
+- Question and Category models  
+- QuizResult data structure  
+- API response mapping  
 
-The app uses **Provider** for dependency injection and reactive state management:
+### Service & Repository Layer
+
+- API communication using Dio  
+- Data transformation into model classes  
+- Error handling for failed network requests  
+- Repository pattern to abstract service implementation from ViewModels  
+
+---
+
+## State Management
+
+The application uses **Provider** for dependency injection and reactive state updates.
+
+Example:
 
 ```dart
-// ViewModel listens to changes
 class QuizViewModel extends ChangeNotifier {
-  // Business logic here
   void selectAnswer(String answer) {
-    // Logic...
-    notifyListeners(); // Notify UI of changes
+    // Business logic here
+    notifyListeners();
   }
 }
 
-// UI rebuilds only when state changes
 Consumer<QuizViewModel>(
   builder: (context, viewModel, child) {
     return Text('Score: ${viewModel.score}');
@@ -95,51 +97,33 @@ Consumer<QuizViewModel>(
 lib/
 ├── core/
 │   ├── constants/
-│   │   ├── app_constants.dart      # App routes, timeouts, API config
-│   │   └── app_colors.dart         # Centralized color palette
+│   │   ├── app_constants.dart
+│   │   └── app_colors.dart
 │   ├── theme/
-│   │   └── app_theme.dart          # Theme configuration
+│   │   └── app_theme.dart
 │   ├── services/
-│   │   └── [service files]         # API and utility services
 │   └── utils/
-│       └── [utility files]         # Helper functions
 │
 ├── data/
 │   ├── models/
-│   │   ├── question_model.dart     # Question and Category models
-│   │   └── [other models]
 │   ├── remote/
-│   │   └── quiz_service.dart       # API client
+│   │   └── quiz_service.dart
 │   └── repositories/
-│       ├── quiz_repository.dart    # Quiz data repository
-│       └── auth_repository.dart    # Authentication repository
 │
 ├── viewmodel/
 │   ├── quiz/
-│   │   └── quiz_viewmodel.dart     # Quiz business logic
 │   ├── home/
-│   │   └── home_viewmodel.dart     # Home screen logic
 │   ├── auth/
-│   │   └── auth_viewmodel.dart     # Authentication logic
-│   └── [other viewmodels]
 │
 ├── views/
 │   ├── screens/
-│   │   ├── quiz/
-│   │   │   └── quiz_screen.dart    # Quiz UI
-│   │   ├── home/
-│   │   │   └── home_screen.dart    # Home UI
-│   │   ├── result/
-│   │   │   └── result_screen.dart  # Results UI
-│   │   └── [other screens]
 │   └── widgets/
-│       └── [custom widgets]        # Reusable UI components
 │
 ├── routes/
-│   └── app_routes.dart             # Route definitions
+│   └── app_routes.dart
 │
-├── main.dart                        # App entry point
-└── pubspec.yaml                     # Dependencies
+├── main.dart
+└── pubspec.yaml
 ```
 
 ### Folder Descriptions
@@ -157,17 +141,27 @@ lib/
 
 ---
 
+This structure keeps the codebase organized and easier to maintain as the app grows.
+
+
+
 ## API Integration
 
-The app fetches quiz questions from an external trivia service. The integration is handled through a dedicated service layer, ensuring clean separation from UI logic.
+Quiz questions are fetched from an external trivia service.  
+All networking logic is handled in a **dedicated service layer**, keeping the UI clean and focused on presentation only.
+
+---
 
 ### How It Works
 
-1. **Quiz Service** - Handles all API communication
-2. **Query Parameters** - Difficulty, category, and question count are sent as parameters
-3. **Response Mapping** - JSON responses are converted to Dart model objects
-4. **Error Handling** - Network failures trigger user-friendly error messages
-5. **Repository Pattern** - Quiz repository abstracts service implementation from ViewModels
+1. `QuizViewModel` requests quiz data  
+2. The `QuizRepository` forwards the request  
+3. The `QuizService` performs the API call  
+4. The JSON response is mapped into **model classes**  
+5. The `ViewModel` updates the state  
+6. The UI rebuilds automatically using **Provider**
+
+---
 
 ### Data Flow
 
@@ -187,18 +181,12 @@ External Trivia Service
 
 ## Environment Configuration
 
-The app uses a `.env` file for flexible configuration management. This approach allows different settings for development, staging, and production environments without code changes.
+The application uses a `.env` file for configuration management.
 
-### Configuration Features
+- Environment variables are loaded at startup using `flutter_dotenv`
+- Configuration values remain separate from source code
+- Supports flexible development setups
 
-- Environment-specific variables
-- Loaded at app startup via `flutter_dotenv`
-- Prevents hardcoding of configuration values
-- Easy deployment across environments
-
-### Setup Instructions
-
-See the [Setup](#setup-instructions) section below for `.env` file creation.
 
 ---
 
@@ -231,15 +219,8 @@ See the [Setup](#setup-instructions) section below for `.env` file creation.
    touch .env
    ```
 
-4. **Configure Environment Variables**
-   
-   Add the following to your `.env` file:
+4. **Run the Application**
    ```
-   QUIZ_BASE_URL=https://your-api-endpoint
-   ```
-
-5. **Run the Application**
-   ```bash
    flutter run
    ```
 
@@ -262,31 +243,23 @@ flutter build ios --release
 The app follows modern Material Design principles with custom enhancements:
 
 **Gradient Backgrounds**
-- Warm color palette (cream to white gradient)
+- Warm cream-to-white gradient
 - Applied consistently across all screens
-- Creates visual hierarchy and professional appearance
 
 **Glass-Style Cards**
 - Backdrop blur effect for depth
 - Semi-transparent backgrounds
 - Subtle borders and soft shadows
-- Premium visual feel without extra dependencies
 
 **Typography**
 - Google Fonts (Poppins) for consistency
 - Clear text hierarchy with weight variations
-- Optimized readability across screen sizes
 
-**Spacing and Shadows**
-- Consistent 16-20px padding standard
-- Soft shadows for subtle elevation
-- Clean whitespace for visual clarity
 
 **Animations**
-- Smooth question transitions
-- Scale and fade effects
-- Confetti celebration on quiz completion
-- No flashy or distracting effects
+- Smooth transitions between questions
+- Subtle scale and fade effects
+- Confetti animation upon quiz completion
 
 ---
 
@@ -294,7 +267,6 @@ The app follows modern Material Design principles with custom enhancements:
 
 Key packages used in this project:
 
-- **flutter**: Core Flutter framework
 - **provider**: State management and dependency injection
 - **dio**: HTTP client for API requests
 - **google_fonts**: Custom typography
@@ -310,34 +282,13 @@ Full dependency list available in `pubspec.yaml`.
 
 ## Future Improvements
 
-- **Local Storage**: SQLite integration for persistent score history
-- **Dark Mode**: Theme switching support
-- **Offline Support**: Question caching for offline access
-- **Unit Testing**: Comprehensive test coverage for business logic
-- **Performance Optimization**: Lazy loading and image caching
-- **Leaderboard**: Multi-device score synchronization
-- **User Profiles**: Detailed statistics and achievements
-- **Advanced Filtering**: Additional filter options for questions
-- **Analytics**: Track user engagement and quiz performance
-- **Accessibility**: Enhanced screen reader support
+- Local storage for persistent quiz history
+- Dark mode support
+- Offline question caching
+- Expanded unit and widget testing
+- Leaderboard functionality
+- Accessibility improvements
 
----
-
-## Testing
-
-### Running Tests
-
-```bash
-flutter test
-```
-
-### Test Coverage
-
-- Unit tests for ViewModel logic
-- Widget tests for UI components
-- Integration tests for complete flows
-
----
 
 ## Deployment
 
@@ -388,19 +339,18 @@ This project is a portfolio demonstration. However, best practices for contribut
 
 ## License
 
-This project is provided as-is for educational and portfolio purposes.
+This project is provided for educational and portfolio purposes.
 
 ---
 
 ## Author
 
-**Your Name**  
+**Ehsan Ali**  
 Flutter Developer
 
-GitHub: [Your GitHub Profile](https://github.com/yourprofile)  
-LinkedIn: [Your LinkedIn Profile](https://linkedin.com/in/yourprofile)  
-Email: your.email@example.com
-
+GitHub: [github.com/originehsan](https://github.com/originehsan)  
+LinkedIn: [linkedin.com/in/ehsan-7x](https://www.linkedin.com/in/ehsan-7x/)  
+Email: originehsan.email@example.com
 ---
 
 ## Acknowledgments
@@ -411,20 +361,8 @@ Email: your.email@example.com
 
 ---
 
-## Version History
-
-- **v1.0.0** (March 2026) - Initial release with core features
-  - Category-based quiz functionality
-  - Modern UI design implementation
-  - Result tracking and analytics
-  - Error handling and state management
-
----
-
 ## Contact & Support
 
 For questions or feedback, please reach out through GitHub issues or email.
 
 ---
-
-**Last Updated**: March 3, 2026
