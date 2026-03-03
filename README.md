@@ -126,21 +126,6 @@ lib/
 └── pubspec.yaml
 ```
 
-### Folder Descriptions
-
-- **core/constants**: Application-wide constants and color definitions
-- **core/theme**: Theme styles and design tokens
-- **core/services**: Utility services for logging, analytics, etc.
-- **data/models**: Data classes representing API responses
-- **data/remote**: API client and network requests
-- **data/repositories**: Data access abstraction layer
-- **viewmodel**: Business logic layer using Provider
-- **views/screens**: Full-screen UI components
-- **views/widgets**: Reusable custom widgets
-- **routes**: Navigation and route management
-
----
-
 This structure keeps the codebase organized and easier to maintain as the app grows.
 
 
@@ -346,11 +331,12 @@ This project is provided for educational and portfolio purposes.
 ## Author
 
 **Ehsan Ali**  
-Flutter Developer
+Flutter Developer  
 
 GitHub: [github.com/originehsan](https://github.com/originehsan)  
 LinkedIn: [linkedin.com/in/ehsan-7x](https://www.linkedin.com/in/ehsan-7x/)  
-Email: originehsan.email@example.com
+Email: originehsan.email@example.com  
+
 ---
 
 ## Acknowledgments
